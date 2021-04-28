@@ -12,17 +12,26 @@ INPUT_AUDIO_FOLDER = "input/audio"
 OUT_FOLDER = "output"
 
 
-def main(frames_dir, audio_dir):
-    print("processing {} + {}".format(frames_dir, audio_dir))
+def main(frames_dir, audio_dir, output_dir):
+    print("Processing frames folder '{}', audio folder '{}' save to '{}' ...".format(frames_dir, audio_dir,
+                                                                                     output_dir))
+    video_file = video_summarization.create_video_from_frames(frames_dir, output_dir)
+    video_summarization.combine_frames_and_audio(video_file, audio_dir, output_dir)
 
 
 if __name__ == "__main__":
     frame_folders = os.walk(INPUT_FRAMES_FOLDER)
     next(frame_folders)
     for dirpath, dirnames, fnames in frame_folders:
-        folder_name = dirpath.split("/")[-1]
-        print("Processing folder '" + folder_name + "' ...")
+        video_name = dirpath.split("/")[-1]
+        frames_folder_dir = os.path.join(INPUT_FRAMES_FOLDER, video_name)
+        audio_file_dir = os.path.join(INPUT_AUDIO_FOLDER, video_name+".wav")
+        output_dir = os.path.join(OUT_FOLDER, video_name)
+        try:
+            os.makedirs(output_dir)
+        except OSError as exception:
+            if exception.errno != errno.EEXIST:
+                raise
+        # print("Processing frames folder '{}', audio folder '{}' save to '{}' ...".format(frames_folder_dir, audio_file_dir, output_dir))
 
-    # main("input/frames/concert", "input/audio/concert.wav")
-    main("input/frames/meridian", "input/audio/meridian.wav")
-    # main("input/frames/soccer", "input/audio/soccer.wav")
+    main("input/frames/concert", "input/audio/concert.wav", "output/concert")

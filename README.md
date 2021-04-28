@@ -30,3 +30,8 @@ conda remove --name Video-Summarization --all
 Once the virtual environment has been activated, you can execute code from the same terminal. Or use in other Python IDEs, such as PyCharm, VSCode.
 
 Then create a folder `input`, put all `audio` folder and `frames` folder into this folder.
+
+If added any new libraries, create new environment yml file by executing:
+```
+conda env export > environment.yml
+```
