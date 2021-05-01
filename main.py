@@ -15,7 +15,8 @@ OUT_FOLDER = "output"
 def main(frames_dir, audio_dir, output_dir):
     print("Processing frames folder '{}', audio folder '{}' save to '{}' ...".format(frames_dir, audio_dir,
                                                                                      output_dir))
-    video_file = video_summarization.create_video_from_frames(frames_dir, output_dir)
+    frames = video_summarization.read_frames_from_folder(frames_dir)
+    video_file = video_summarization.create_video_from_frames(frames, output_dir)
     video_summarization.combine_frames_and_audio(video_file, audio_dir, output_dir)
 
 
