@@ -17,8 +17,8 @@ def create_video_from_frames(frames, out_dir):
     :return: string, dir of the new video file
     """
     n, r, c, ch = frames.shape
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video_file = os.path.join(out_dir, "frames.mp4")
+    fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+    video_file = os.path.join(out_dir, "frames.avi")
     out = cv2.VideoWriter(video_file, fourcc, 30, (c, r))
     for i in np.arange(n):
         out.write(frames[i])
@@ -37,7 +37,7 @@ def combine_frames_and_audio(video_file, audio_file, out_dir):
     clip = VideoFileClip(video_file)
     audio_clip = AudioFileClip(audio_file)
     video_clip = clip.set_audio(audio_clip)
-    video_clip.write_videofile(os.path.join(out_dir, "combined.mp4"))
+    video_clip.write_videofile(os.path.join(out_dir, "combined.avi"), codec='png')
 
 
 def read_frames_from_folder(frames_dir, start=0, end=-1):
