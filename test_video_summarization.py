@@ -14,6 +14,9 @@ class MyTestCase(unittest.TestCase):
     def setUp(self):
         pass
 
+    def test_combine_video_audio(self):
+        video_summarization.combine_frames_and_audio("output/concert/combined.mp4", "input/audio/concert.wav", ".")
+
     def test_SAD(self):
         frame76 = cv2.imread("test/frame76.jpg")
         frame77 = cv2.imread("test/frame77.jpg")

@@ -1,10 +1,17 @@
 import sys
+import os
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QSlider, QStyle,\
     QSizePolicy, QFileDialog
 from PyQt5.QtGui import QIcon, QPalette
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtCore import Qt, QUrl
+import video_summarization
+
+
+INPUT_FRAMES_FOLDER = "input/frames"
+INPUT_AUDIO_FOLDER = "input/audio"
+OUT_FOLDER = "output"
 
 
 class Window(QWidget):
@@ -12,6 +19,13 @@ class Window(QWidget):
     def __init__(self):
 
         super().__init__()
+
+        # directory of input frames and audio
+        self.frames_folder_dir = None
+        self.audio_file_dir = None
+
+        # combined all frames this video
+        self.combined_video_file_dir = None
 
         self.setWindowTitle("Video Summarize Player")
         self.setGeometry(350, 100, 400, 320)
@@ -35,9 +49,11 @@ class Window(QWidget):
 
         # create load frames button
         self.loadFramesButton = QPushButton('Load Frames')
+        self.loadFramesButton.clicked.connect(self.on_clicked_load_frames_button)
 
         # create load Wav button
         self.loadWavButton = QPushButton('Load Wav File')
+        self.loadWavButton.clicked.connect(self.on_clicked_load_audio_button)
 
         # create open button
         openButton = QPushButton('Open Video')
@@ -99,11 +115,34 @@ class Window(QWidget):
 
     def open_file(self):
 
-        file_name, _ = QFileDialog.getOpenFileName(self, "Open Video")
+        file_name, _ = QFileDialog.getOpenFileName(self, "Open Video", "./")
 
         if file_name != '':
+            print("open video: "+file_name)
             self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(file_name)))
             self.playButton.setEnabled(True)
+
+    def on_clicked_load_frames_button(self):
+        folder_dir = QFileDialog.getExistingDirectory(self, "Open Frame Folder", "./", QFileDialog.ShowDirsOnly)
+        print("load frames from :" + folder_dir)
+        self.frames_folder_dir = folder_dir
+
+        # start process
+        self.load_frames()
+
+    def load_frames(self):
+        video_name = self.frames_folder_dir.split("/")[-1]
+        output_dir = os.path.join(OUT_FOLDER, video_name)
+        return_path = video_summarization.create_video_from_frames_folder(self.frames_folder_dir, output_dir)
+        self.combined_video_file_dir = os.path.abspath(return_path)
+        print(self.combined_video_file_dir)
+        self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(self.combined_video_file_dir)))
+        self.playButton.setEnabled(True)
+
+    def on_clicked_load_audio_button(self):
+        file_name, _ = QFileDialog.getOpenFileName(self, "Open Wave File", "./")
+        print("load audio file from :" + file_name)
+        self.audio_file_dir = file_name
 
     def play_video(self):
 

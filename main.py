@@ -34,5 +34,6 @@ if __name__ == "__main__":
             if exception.errno != errno.EEXIST:
                 raise
         # print("Processing frames folder '{}', audio folder '{}' save to '{}' ...".format(frames_folder_dir, audio_file_dir, output_dir))
+        main(frames_folder_dir, audio_file_dir, output_dir)
 
-    main("input/frames/concert", "input/audio/concert.wav", "output/concert")
+    # main("input/frames/concert", "input/audio/concert.wav", "output/concert")

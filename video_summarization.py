@@ -5,8 +5,18 @@ import cv2
 from matplotlib import pyplot as plt
 from os import path
 import time
-import ffmpeg
 from moviepy.editor import *
+
+
+def create_video_from_frames_folder(frames_dir, out_dir):
+    """
+
+    :param frames_dir: string
+    :param out_dir: string
+    :return: string, dir of the new video file
+    """
+    frames = read_frames_from_folder(frames_dir)
+    return create_video_from_frames(frames, out_dir)
 
 
 def create_video_from_frames(frames, out_dir):
@@ -17,8 +27,8 @@ def create_video_from_frames(frames, out_dir):
     :return: string, dir of the new video file
     """
     n, r, c, ch = frames.shape
-    fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-    video_file = os.path.join(out_dir, "frames.avi")
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    video_file = os.path.join(out_dir, "frames.mp4")
     out = cv2.VideoWriter(video_file, fourcc, 30, (c, r))
     for i in np.arange(n):
         out.write(frames[i])
@@ -37,7 +47,7 @@ def combine_frames_and_audio(video_file, audio_file, out_dir):
     clip = VideoFileClip(video_file)
     audio_clip = AudioFileClip(audio_file)
     video_clip = clip.set_audio(audio_clip)
-    video_clip.write_videofile(os.path.join(out_dir, "combined.avi"), codec='png')
+    video_clip.write_videofile(os.path.join(out_dir, "combined.mp4"))
 
 
 def read_frames_from_folder(frames_dir, start=0, end=-1):
