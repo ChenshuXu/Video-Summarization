@@ -7,9 +7,9 @@ import time
 
 import video_summarization
 
-INPUT_FRAMES_FOLDER = "input/frames"
-INPUT_AUDIO_FOLDER = "input/audio"
-OUT_FOLDER = "output"
+INPUT_FRAMES_FOLDER = "input/frames/"
+INPUT_AUDIO_FOLDER = "input/audio/"
+OUT_FOLDER = "output/"
 
 
 def main(frames_dir, audio_dir, output_dir):
