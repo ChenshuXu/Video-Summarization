@@ -453,6 +453,6 @@ def find_scenes(video_path, threshold=30.0):
 
     result = []
     for i in scene_list:
-        result.append(i[0].get_frames())
+        result.append((i[0].get_frames(), i[1].get_frames()))
     return result
 
