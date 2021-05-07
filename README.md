@@ -1,5 +1,5 @@
 # Video-Summarization
-# Set up the Virtual Environment
+## Set up the Virtual Environment
 
 Download and install the latest Python3 supported version of Anaconda for your OS [here](https://www.anaconda.com/download).
 
@@ -34,4 +34,12 @@ Then create a folder `input`, put all `audio` folder and `frames` folder into th
 If added any new libraries, create new environment yml file by executing:
 ```
 conda env export > environment.yml
+```
+
+## How to run
+
+Change directory to the same level as `final_player.py` file
+```
+~$ conda activate Video-Summarization
+(Video-Summarization) ~$python final_player.py
 ```

@@ -34,6 +34,8 @@ if __name__ == "__main__":
             if exception.errno != errno.EEXIST:
                 raise
         print("Processing frames folder '{}', audio folder '{}' save to '{}' ...".format(frames_folder_dir, audio_file_dir, output_dir))
-        video_summarization.create_summarized_video(frames_folder_dir, audio_file_dir, output_dir)
+        start_time = time.time()
+        final_video_dir = video_summarization.create_summarized_video_2(frames_folder_dir, audio_file_dir, output_dir)
+        print("Done, generate {} takes {:.2f}".format(final_video_dir, time.time() - start_time))
 
     # main("input/frames/concert", "input/audio/concert.wav", "output/concert")

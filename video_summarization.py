@@ -1,23 +1,14 @@
 import math
 import os
 import numpy as np
-import scipy as sp
 import cv2
 from matplotlib import pyplot as plt
 from os import path
 import errno
 import time
 from moviepy.editor import *
-import soundfile as sf
-import pyloudnorm as pyln
 from pydub import AudioSegment
 
-# Standard PySceneDetect imports:
-from scenedetect import VideoManager
-from scenedetect import SceneManager
-
-# For content-aware scene detection:
-from scenedetect.detectors import ContentDetector
 
 Feature_Params = dict(maxCorners=100,
                       qualityLevel=0.1,
@@ -131,74 +122,6 @@ def compute_difference_SAD(frames):
     return diffs
 
 
-def compute_difference_SAD_with_edge(frames):
-    """
-    use sum of absolute differences (SAD) to calculate the cutting score
-    :param frames: np.ndarray, dtype=np.uint8, shape=(n, r, c, ch)
-        image array
-    :return: np.ndarray, dtype=np.float64, shape=(n-1)
-        difference array
-    """
-    n, r, c, ch = frames.shape
-    diffs = np.zeros((n - 1), dtype=np.float64)
-    for i in np.arange(1, n):
-        frame1 = cv2.Canny(frames[i - 1], 100, 200)
-        frame2 = cv2.Canny(frames[i], 100, 200)
-        diff = np.abs(frame1.astype(np.float64) - frame2.astype(np.float64))
-        diff = np.sum(diff)
-        diffs[i - 1] = diff
-    return diffs
-
-
-def compute_HD_between_two_frames(frame1, frame2):
-    """
-
-    :param frame1: np.ndarray, dtype=np.uint8, shape=(r,c,ch)
-    :param frame2: np.ndarray, dtype=np.uint8, shape=(r,c,ch)
-    :return: float
-    """
-    r = frame1.shape[0]
-    c = frame1.shape[1]
-    frame1_gray = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
-    frame1_h = cv2.calcHist(frame1_gray, [0], None, [256], [0, 256])
-
-    frame2_gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
-    frame2_h = cv2.calcHist(frame2_gray, [0], None, [256], [0, 256])
-    diff = 1000 * np.sum((frame1_h - frame2_h) ** 2) / (r * c)
-    return diff
-
-
-def compute_difference_HD(frames):
-    """
-    use histogram differences (HD) to calculate the cutting score
-    :param frames: np.ndarray, dtype=np.uint8, shape=(n, r, c, ch)
-    :return: np.ndarray, dtype=np.float64, shape=(n-1)
-        difference array
-    """
-    n, r, c, ch = frames.shape
-    diffs = np.zeros((n - 1), dtype=np.float64)
-    for i in np.arange(1, n):
-        diffs[i - 1] = compute_HD_between_two_frames(frames[i - 1], frames[i])
-    return diffs
-
-
-def compute_difference_HD_with_edge(frames):
-    n, r, c, ch = frames.shape
-    diffs = np.zeros((n - 1), dtype=np.float64)
-    for i in np.arange(1, n):
-        frame1 = cv2.Canny(frames[i - 1], 100, 200)
-        frame2 = cv2.Canny(frames[i], 100, 200)
-        frame1_h = cv2.calcHist(frame1, [0], None, [256], [0, 256])
-        frame2_h = cv2.calcHist(frame2, [0], None, [256], [0, 256])
-        diff = 1000 * np.sum((frame1_h - frame2_h) ** 2) / (r * c)
-        diffs[i - 1] = diff
-    return diffs
-
-
-def compute_edge_diff_between_two_frames(frame1, frame2):
-    pass
-
-
 def compute_homography(prev_frame, curr_frame, feature_params=None, lk_params=None):
     # params for ShiTomasi corner detection
     if feature_params is None:
@@ -283,7 +206,13 @@ def plot_difference_scores(diffs, plot_filename="diff_score.png", start=0):
     plt.clf()
 
 
-def compute_scene_idx(frames, threshold=100, minimum_length=30):
+def plot_scene_scores(scores, plot_filename):
+    plt.plot(scores)
+    plt.savefig(plot_filename)
+    plt.clf()
+
+
+def compute_scene_cuts(frames, threshold=100, minimum_length=30):
     """
     split scenes, return tuple of index (begin, end)
     :param minimum_length:
@@ -437,35 +366,6 @@ def plot_homographies(raw_homography, output_dir, prefix="", smoothed_homography
     plt.clf()
 
 
-def find_scenes(video_path, threshold=30.0):
-    """
-    using scene detect library
-    :param video_path:
-    :param threshold:
-    :return:
-    """
-    # Create our video & scene managers, then add the detector.
-    video_manager = VideoManager([video_path])
-    scene_manager = SceneManager()
-    scene_manager.add_detector(
-        ContentDetector(threshold=threshold))
-
-    # Improve processing speed by downscaling before processing.
-    video_manager.set_downscale_factor()
-
-    # Start the video manager and perform the scene detection.
-    video_manager.start()
-    scene_manager.detect_scenes(frame_source=video_manager)
-
-    # Each returned scene is a tuple of the (start, end) timecode.
-    scene_list = scene_manager.get_scene_list()
-
-    result = []
-    for i in scene_list:
-        result.append((i[0].get_frames(), i[1].get_frames()))
-    return result
-
-
 def compute_movement_score(frames, start_idx, end_idx, SAD_weight=1, homography_weight=1, dx_weight=1, dy_weight=1):
     """
 
@@ -493,15 +393,6 @@ def compute_movement_score(frames, start_idx, end_idx, SAD_weight=1, homography_
     return weighted_score
 
 
-def compute_color_score(frames):
-    """
-
-    :param frames:
-    :return:
-    """
-    pass
-
-
 def compute_audio_score(sound_file, start_idx, end_idx):
     """
 
@@ -514,23 +405,6 @@ def compute_audio_score(sound_file, start_idx, end_idx):
     end_time = end_idx * (1 / 30) * 1000
     cur_slice = sound_file[start_time:end_time]
     return cur_slice.rms/100
-
-
-def compute_total_score(frames, sound_file, start_idx, end_idx, movement_weight=1, audio_weight=1):
-    """
-
-    :param frames: np.ndarray, dtype=np.uint8, shape=(n, r, c, ch)
-        whole video frames
-    :param sound_file:
-    :param start_idx:
-    :param end_idx:
-    :param movement_weight:
-    :param audio_weight:
-    :return:
-    """
-    movement_score = compute_movement_score(frames, start_idx, end_idx)
-    audio_score = compute_audio_score(sound_file, start_idx, end_idx)
-    return (movement_weight * movement_score + audio_weight * audio_score) / (movement_weight + audio_weight)
 
 
 def create_combined_video(frames, audio_file_dir, output_dir):
@@ -548,7 +422,6 @@ def create_summarized_video(frames, audio_file_dir, output_dir):
             raise
 
     # combine frames to a video
-    # whole_video_frames = read_frames_from_folder(frames_folder_dir)
     frame_video_dir = create_video_from_frames(frames, output_dir)
 
     # combine frame video and audio file
@@ -556,10 +429,26 @@ def create_summarized_video(frames, audio_file_dir, output_dir):
     return create_summarized_video_from_combined_video(frames, combined_video, audio_file_dir, output_dir)
 
 
+def create_summarized_video_2(frames_folder_dir, audio_file_dir, output_dir):
+    try:
+        os.makedirs(output_dir)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
+
+    # combine frames to a video
+    whole_video_frames = read_frames_from_folder(frames_folder_dir)
+    frame_video_dir = create_video_from_frames(whole_video_frames, output_dir)
+
+    # combine frame video and audio file
+    combined_video = combine_frames_and_audio(frame_video_dir, audio_file_dir, output_dir)
+    return create_summarized_video_from_combined_video(whole_video_frames, combined_video, audio_file_dir, output_dir)
+
+
 def create_summarized_video_from_combined_video(whole_video_frames, combined_video_dir, audio_file_dir, output_dir):
     # break scenes and give scene score
     audio_file = AudioSegment.from_file(audio_file_dir)
-    scene_breaks = compute_scene_idx(whole_video_frames)
+    scene_breaks = compute_scene_cuts(whole_video_frames)
     scene_scores = []
     for i in range(len(scene_breaks)):
         start_idx = scene_breaks[i][0]
@@ -569,9 +458,11 @@ def create_summarized_video_from_combined_video(whole_video_frames, combined_vid
         audio_score = compute_audio_score(audio_file, start_idx, end_idx)
         # score = compute_total_score(whole_video_frames, audio_file, start_idx, end_idx)
         scene_scores.append([start_idx, end_idx, movement_score, audio_score, 0])
+    print("Done break scenes and give scene score")
 
     # normalize movement scores
     movement_scores = [i[2] for i in scene_scores]
+    plot_scene_scores(np.array(movement_scores), path.join(output_dir, "movement_score.png"))
     low = min(movement_scores)
     high = max(movement_scores)
     for i in range(len(scene_scores)):
@@ -579,6 +470,7 @@ def create_summarized_video_from_combined_video(whole_video_frames, combined_vid
 
     # normalize audio scores
     audio_scores = [i[3] for i in scene_scores]
+    plot_scene_scores(np.array(audio_scores), path.join(output_dir, "audio_score.png"))
     low = min(audio_scores)
     high = max(audio_scores)
     for i in range(len(scene_scores)):
@@ -593,6 +485,7 @@ def create_summarized_video_from_combined_video(whole_video_frames, combined_vid
 
     # sort with total score
     scene_scores.sort(key=lambda x: x[4], reverse=True)
+    print("Done sort with total score")
 
     # select scenes
     final_scenes = []
@@ -611,6 +504,7 @@ def create_summarized_video_from_combined_video(whole_video_frames, combined_vid
 
     # sort with start time
     final_scenes.sort()
+    print("Done select scenes")
 
     # combine final video
     video_clip = VideoFileClip(combined_video_dir)
