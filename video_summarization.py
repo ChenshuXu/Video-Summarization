@@ -533,14 +533,14 @@ def compute_total_score(frames, sound_file, start_idx, end_idx, movement_weight=
     return (movement_weight * movement_score + audio_weight * audio_score) / (movement_weight + audio_weight)
 
 
-def create_combined_video(frames_folder_dir, audio_file_dir, output_dir):
-    frames = read_frames_from_folder(frames_folder_dir)
+def create_combined_video(frames, audio_file_dir, output_dir):
+    # frames = read_frames_from_folder(frames_folder_dir)
     video_file = create_video_from_frames(frames, output_dir)
     combined_video_dir = combine_frames_and_audio(video_file, audio_file_dir, output_dir)
     return combined_video_dir
 
 
-def create_summarized_video(frames_folder_dir, audio_file_dir, output_dir):
+def create_summarized_video(frames, audio_file_dir, output_dir):
     try:
         os.makedirs(output_dir)
     except OSError as exception:
@@ -548,12 +548,12 @@ def create_summarized_video(frames_folder_dir, audio_file_dir, output_dir):
             raise
 
     # combine frames to a video
-    whole_video_frames = read_frames_from_folder(frames_folder_dir)
-    frame_video_dir = create_video_from_frames(whole_video_frames, output_dir)
+    # whole_video_frames = read_frames_from_folder(frames_folder_dir)
+    frame_video_dir = create_video_from_frames(frames, output_dir)
 
     # combine frame video and audio file
     combined_video = combine_frames_and_audio(frame_video_dir, audio_file_dir, output_dir)
-    return create_summarized_video_from_combined_video(whole_video_frames, combined_video, audio_file_dir, output_dir)
+    return create_summarized_video_from_combined_video(frames, combined_video, audio_file_dir, output_dir)
 
 
 def create_summarized_video_from_combined_video(whole_video_frames, combined_video_dir, audio_file_dir, output_dir):
