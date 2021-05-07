@@ -168,7 +168,11 @@ class MyTestCase(unittest.TestCase):
     test final pipeline
     """
     def test_create_summarized_video(self):
-        video_summarization.create_summarized_video("input/frames/soccer", "input/audio/soccer.wav", "test/soccer")
+        video_summarization.create_summarized_video("input/test_data/frames_test/test_video", "input/test_data/test_video.wav", "test/test_data")
+
+    def test_dataset3(self):
+        video_summarization.create_summarized_video("input/test_data_3/frames_test/test_video_3", "input/test_data_3/test_video_3.wav", "test/test_data3")
+
 
 if __name__ == '__main__':
     unittest.main()

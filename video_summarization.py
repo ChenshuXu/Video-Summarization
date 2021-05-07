@@ -513,7 +513,7 @@ def compute_audio_score(sound_file, start_idx, end_idx):
     start_time = start_idx * (1 / 30) * 1000
     end_time = end_idx * (1 / 30) * 1000
     cur_slice = sound_file[start_time:end_time]
-    return cur_slice.rms
+    return cur_slice.rms/100
 
 
 def compute_total_score(frames, sound_file, start_idx, end_idx, movement_weight=1, audio_weight=1):
@@ -553,7 +553,10 @@ def create_summarized_video(frames_folder_dir, audio_file_dir, output_dir):
 
     # combine frame video and audio file
     combined_video = combine_frames_and_audio(frame_video_dir, audio_file_dir, output_dir)
+    return create_summarized_video_from_combined_video(whole_video_frames, combined_video, audio_file_dir, output_dir)
 
+
+def create_summarized_video_from_combined_video(whole_video_frames, combined_video_dir, audio_file_dir, output_dir):
     # break scenes and give scene score
     audio_file = AudioSegment.from_file(audio_file_dir)
     scene_breaks = compute_scene_idx(whole_video_frames)
@@ -561,11 +564,35 @@ def create_summarized_video(frames_folder_dir, audio_file_dir, output_dir):
     for i in range(len(scene_breaks)):
         start_idx = scene_breaks[i][0]
         end_idx = scene_breaks[i][1]
-        score = compute_total_score(whole_video_frames, audio_file, start_idx, end_idx)
-        scene_scores.append((start_idx, end_idx, score))
 
-    # sort scene score
-    scene_scores.sort(key=lambda x: x[2], reverse=True)
+        movement_score = compute_movement_score(whole_video_frames, start_idx, end_idx)
+        audio_score = compute_audio_score(audio_file, start_idx, end_idx)
+        # score = compute_total_score(whole_video_frames, audio_file, start_idx, end_idx)
+        scene_scores.append([start_idx, end_idx, movement_score, audio_score, 0])
+
+    # normalize movement scores
+    movement_scores = [i[2] for i in scene_scores]
+    low = min(movement_scores)
+    high = max(movement_scores)
+    for i in range(len(scene_scores)):
+        scene_scores[i][2] = (movement_scores[i] - low) / (high - low)
+
+    # normalize audio scores
+    audio_scores = [i[3] for i in scene_scores]
+    low = min(audio_scores)
+    high = max(audio_scores)
+    for i in range(len(scene_scores)):
+        scene_scores[i][3] = (audio_scores[i] - low) / (high - low)
+
+    # get total scores
+    movement_weight = 1
+    audio_weight = 2
+    for i in range(len(scene_scores)):
+        scene_scores[i][4] = (scene_scores[i][2] * movement_weight + scene_scores[i][3] * audio_weight) / (
+                    movement_weight + audio_weight)
+
+    # sort with total score
+    scene_scores.sort(key=lambda x: x[4], reverse=True)
 
     # select scenes
     final_scenes = []
@@ -578,19 +605,21 @@ def create_summarized_video(frames_folder_dir, audio_file_dir, output_dir):
         end_time = end_idx * (1 / 30)
 
         total_time += (end_time - start_time)
-        if total_time >= 110:
+        if total_time >= 100:
             break
         final_scenes.append((start_time, end_time))
 
-    # rearrange scenes
+    # sort with start time
     final_scenes.sort()
 
     # combine final video
-    video_clip = VideoFileClip(combined_video)
+    video_clip = VideoFileClip(combined_video_dir)
     video_clips = []
     for start_time, end_time in final_scenes:
         scene_clip = video_clip.subclip(start_time, end_time)
         video_clips.append(scene_clip)
 
     final_video = concatenate_videoclips(video_clips)
-    final_video.write_videofile(path.join(output_dir, "final.mp4"))
+    final_video_dir = path.join(output_dir, "final.mp4")
+    final_video.write_videofile(final_video_dir)
+    return final_video_dir
