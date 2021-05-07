@@ -333,8 +333,9 @@ def create_scene_video_from_breaks(frames, audio_file, breaks, out_dir):
         start_idx = breaks[i][0]
         end_idx = breaks[i][1]
         shot_frames = frames[start_idx: end_idx]
-        score = compute_total_score(frames, audio_file, start_idx, end_idx)
-        create_video_from_frames(shot_frames, out_dir, "frames_{}_{}_score1_{:.2f}.mp4".format(start_idx, end_idx, score))
+        movement_score = compute_movement_score(frames, start_idx, end_idx)
+        audio_score = compute_audio_score(audio_file, start_idx, end_idx)
+        create_video_from_frames(shot_frames, out_dir, "frames_{}_{}_score1_{:.1f}_{:.1f}.mp4".format(start_idx, end_idx, movement_score, audio_score))
         homographies = compute_homographies_from_frames(shot_frames)
         plot_homographies(homographies, output_dir=out_dir, start=start_idx)
 

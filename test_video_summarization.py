@@ -69,7 +69,7 @@ class MyTestCase(unittest.TestCase):
         frames = video_summarization.read_frames_from_folder("input/frames/meridian")
         audio_file = AudioSegment.from_file("input/audio/meridian.wav")
         cuts = video_summarization.compute_scene_idx(frames)
-        video_summarization.create_scene_video_from_breaks(frames, cuts, "test/meridian")
+        video_summarization.create_scene_video_from_breaks(frames, audio_file, cuts, "test/meridian")
 
     def test_break_scene_concert(self):
         frames = video_summarization.read_frames_from_folder("input/frames/concert")
