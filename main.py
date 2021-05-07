@@ -12,14 +12,6 @@ INPUT_AUDIO_FOLDER = "input/audio/"
 OUT_FOLDER = "output/"
 
 
-def main(frames_dir, audio_dir, output_dir):
-    print("Processing frames folder '{}', audio folder '{}' save to '{}' ...".format(frames_dir, audio_dir,
-                                                                                     output_dir))
-    frames = video_summarization.read_frames_from_folder(frames_dir)
-    video_file = video_summarization.create_video_from_frames(frames, output_dir)
-    video_summarization.combine_frames_and_audio(video_file, audio_dir, output_dir)
-
-
 if __name__ == "__main__":
     frame_folders = os.walk(INPUT_FRAMES_FOLDER)
     next(frame_folders)
@@ -33,7 +25,5 @@ if __name__ == "__main__":
         except OSError as exception:
             if exception.errno != errno.EEXIST:
                 raise
-        # print("Processing frames folder '{}', audio folder '{}' save to '{}' ...".format(frames_folder_dir, audio_file_dir, output_dir))
-        main(frames_folder_dir, audio_file_dir, output_dir)
-
-    # main("input/frames/concert", "input/audio/concert.wav", "output/concert")
+        print("Processing frames folder '{}', audio folder '{}' save to '{}' ...".format(frames_folder_dir, audio_file_dir, output_dir))
+        video_summarization.create_summarized_video(frames_folder_dir, audio_file_dir, output_dir)
